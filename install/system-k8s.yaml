@@ -6,8 +6,6 @@ metadata:
   labels:
     k8s-app: kube-controller-manager
   annotations:
-    k8s.eip.work/workload: controller-manager
-    k8s.eip.work/displayName: controller-manager
     prometheus.io/scrape: 'true'
 spec:
   selector:
