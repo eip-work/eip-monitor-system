@@ -170,7 +170,8 @@ spec:
   # type: NodePort
   #type: ClusterIP
   selector:
-    k8s-app: grafana
+    k8s.eip.work/layer: monitor
+    k8s.eip.work/name: monitor-grafana
   ports:
     - name: grafana
       port: 3000
