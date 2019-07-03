@@ -1,0 +1,19 @@
+{
+  "name": "资源层监控套件",
+  "id": "eip-monitor-system",
+  "version": "0.1.0",
+  "lastUpdate": "2019-07-02",
+  "maintainer": "shaohq@foxmail.com",
+  "scripts": ["system-addon.js"],
+  "k8s": ["system-k8s.yaml"],
+  "resources": ["resource/1621.json", "resource/1860.json", "resource/3146.json", "resource/8588.json"],
+  "isGlobal": true,
+  "info": {
+    "install": "",
+    "buttons": "",
+    "context": "",
+    "container": "",
+    "description": "",
+    "document": "https://shaohq.github.io/eip-monitor-system/"
+  }
+}
