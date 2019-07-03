@@ -1,35 +1,38 @@
-async function installGrafanaDb (context, dbUrl, inputName, skipMessage) {
-  await context.$grafanaDashboards.get(dbUrl).then(resp => {
-    console.log(dbUrl, resp.data)
-    let dashboardCreate = {
-      dashboard: resp.data,
-      folderId: 0,
-      inputs: [{name: inputName, type: "datasource", pluginId: "prometheus", value: "Prometheus"}],
-      overwrite: true
-    }
-    context.$grafanaApi.post('kube-system_k8s_namespace/api/dashboards/import', dashboardCreate).then(resp => {
-      console.log('创建 dashboard 成功', resp.data)
-      if (!skipMessage) {
-        context.$notify({
-          title: '创建 dashboard 成功',
-          message: dbUrl,
-          type: 'success',
-          duration: 5000
-        });
-      }
-    })
+async function installGrafanaDb (context, dbUrl, inputName) {
+  let dashboardCreate = {
+    dashboard: context.boundle.data[dbUrl],
+    folderId: 0,
+    inputs: [{name: inputName, type: "datasource", pluginId: "prometheus", value: "Prometheus"}],
+    overwrite: true
+  }
+  await context.$monitorApi.post('/namespace/kube-system/service/monitor-grafana/port/3000/api/dashboards/import', dashboardCreate, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
+    console.log('创建 dashboard 成功', resp.data)
+    context.$notify({
+      title: '创建 dashboard 成功',
+      message: dbUrl,
+      type: 'success',
+      duration: 5000
+    });
   }).catch(e => {
-    context.$message.error('为 kube-system 初始化 grafana 失败: ' + e)
+    console.error(`创建 dashboard 失败 ${dbUrl}:  ${e}`)
   })
 }
 
 let addon = {
   enabled: false,
   preFlight: function (context) {
-    context.$grafanaApi.get(`kube-system_k8s_namespace/api/datasources`).then(async resp => {
+    console.log('preFlight', context)
+    context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/datasources`, {auth: {
+      username: 'admin',
+      password: 'jmx09KT23BClpa7xzs'
+    }}).then(async resp => {
+      console.log('datasources', resp.data)
       let creatingDatasource = true
       for (let item of resp.data) {
-        if (item.url === 'http://prometheus:9090') {
+        if (item.url === 'http://monitor-prometheus:9090') {
           creatingDatasource = false
         }
       }
@@ -37,14 +40,17 @@ let addon = {
         let datasource = {
           "name": "Prometheus",
           "type": "prometheus",
-          "url": "http://prometheus:9090",
+          "url": "http://monitor-prometheus:9090",
           "orgId": 1,
           "access":"proxy",
           "basicAuth":false,
           "readOnly": false,
           "password": ''
         }
-        await context.$grafanaApi.post(`kube-system_k8s_namespace/api/datasources`, datasource).then(async resp => {
+        await context.$monitorApi.post(`/namespace/kube-system/service/monitor-grafana/port/3000/api/datasources`, datasource, {auth: {
+          username: 'admin',
+          password: 'jmx09KT23BClpa7xzs'
+        }}).then(async resp => {
           context.$notify({
             title: '创建 datasource 成功',
             message: `为 kube-system 的grafana 创建 prometheus datasource 成功`,
@@ -58,22 +64,25 @@ let addon = {
       } else {
         console.log('无需为 kube-sytem 初始化 grafana prometheus datasource')
       }
-      context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&skipRecent=true&skipStarred=true&starred=false`).then(async resp => {
+      context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+        username: 'admin',
+        password: 'jmx09KT23BClpa7xzs'
+      }}).then(async resp => {
         let dbs = {
           'db/1-kubernetes-deployment-statefulset-daemonset-metrics': {
-            json: 'kube-system/8588.json',
+            json: 'resource_8588.json',
             ds: 'DS_PROMETHEUS'
           },
           'db/kubernetes-cluster-monitoring-via-prometheus': {
-            json: 'kube-system/1621.json',
+            json: 'resource_1621.json',
             ds: 'DS_PROMETHEUS'
           },
           'db/kubernetes-pods': {
-            json: 'kube-system/3146.json',
+            json: 'resource_3146.json',
             ds: 'DS_PROMETHEUS'
           },
           'db/node-exporter-full': {
-            json: 'kube-system/1860.json',
+            json: 'resource_1860.json',
             ds: 'DS_LOCALHOST'
           }
         }
@@ -109,7 +118,10 @@ let addon = {
 function openNodeMonitor (context) {
   console.log('openNodeMonitor')
   this.loading = true
-  context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&query=Node Exporter&skipRecent=true&skipStarred=true&starred=false`).then(resp => {
+  context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&query=Node Exporter&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
     for (let item of resp.data) {
       if (item.uri === 'db/node-exporter-full') {
         return Promise.resolve(item.url)
@@ -131,7 +143,10 @@ function openNodeMonitor (context) {
 function openNodeMonitorPodContainer (context) {
   console.log('openNodeMonitorPodContainer')
   this.loading = true
-  context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&query=Kubernetes cluster monitoring&skipRecent=true&skipStarred=true&starred=false`).then(resp => {
+  context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&query=Kubernetes cluster monitoring&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
     for (let item of resp.data) {
       if (item.uri === 'db/kubernetes-cluster-monitoring-via-prometheus') {
         return Promise.resolve(item.url)
@@ -181,7 +196,10 @@ async function openNodeMonitorFromPod (context) {
   let dashboardUrl = undefined
   let failed = false
   this.loading = true
-  await context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&query=Node Exporter&skipRecent=true&skipStarred=true&starred=false`).then(resp => {
+  await context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&query=Node Exporter&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
     for (let item of resp.data) {
       if (item.uri === 'db/node-exporter-full') {
         dashboardUrl = item.url
@@ -206,7 +224,10 @@ async function openNodeMonitorPodContainerFromPod (context) {
   let dashboardUrl = undefined
   let failed = false
   this.loading = true
-  await context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&query=Kubernetes cluster monitoring&skipRecent=true&skipStarred=true&starred=false`).then(resp => {
+  await context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&query=Kubernetes cluster monitoring&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
     for (let item of resp.data) {
       if (item.uri === 'db/kubernetes-cluster-monitoring-via-prometheus') {
         dashboardUrl = item.url
@@ -245,7 +266,10 @@ async function openPodMonitor (context) {
   let dashboardUrl = undefined
   let failed = false
   this.loading = true
-  await context.$grafanaApi.get(`kube-system_k8s_namespace/api/search?mode=tree&query=Kubernetes Pods&skipRecent=true&skipStarred=true&starred=false`).then(resp => {
+  await context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&query=Kubernetes Pods&skipRecent=true&skipStarred=true&starred=false`, {auth: {
+    username: 'admin',
+    password: 'jmx09KT23BClpa7xzs'
+  }}).then(resp => {
     for (let item of resp.data) {
       if (item.uri === 'db/kubernetes-pods') {
         dashboardUrl = item.url
