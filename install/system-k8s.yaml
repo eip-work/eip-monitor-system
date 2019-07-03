@@ -3,12 +3,11 @@ kind: Service
 metadata:
   namespace: kube-system
   name: monitor-kube-controller-manager
-  annotations:
-    k8s.eip.work/workload: monitor-kube-controller-manager
-    k8s.eip.work/displayName: monitor-kube-controller-manager
   labels:
     k8s-app: kube-controller-manager
   annotations:
+    k8s.eip.work/workload: monitor-kube-controller-manager
+    k8s.eip.work/displayName: monitor-kube-controller-manager
     prometheus.io/scrape: 'true'
 spec:
   selector:
