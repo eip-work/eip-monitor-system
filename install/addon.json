@@ -1,8 +1,8 @@
 {
   "name": "资源层监控套件",
   "id": "eip-monitor-system",
-  "version": "0.1.0",
-  "lastUpdate": "2019-07-02",
+  "version": "0.1.1",
+  "lastUpdate": "2019-07-03",
   "maintainer": "shaohq@foxmail.com",
   "scripts": ["system-addon.js"],
   "k8s": ["system-k8s.yaml"],
