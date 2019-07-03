@@ -1,6 +1,17 @@
 async function installGrafanaDb (context, dbUrl, inputName) {
+  let db = undefined
+  try {
+    db = JSON.parse(context.boundle.data[dbUrl])
+  } catch(e) {
+    context.$notify({
+      title: `Dashboard ${dbUrl} 格式不对`,
+      message: '错误原因: ' + e,
+      type: 'success',
+      duration: 0
+    })
+  }
   let dashboardCreate = {
-    dashboard: context.boundle.data[dbUrl],
+    dashboard: db,
     folderId: 0,
     inputs: [{name: inputName, type: "datasource", pluginId: "prometheus", value: "Prometheus"}],
     overwrite: true
@@ -62,7 +73,7 @@ let addon = {
           context.$message.error('调用 grafana 接口创建 datasource 失败: ' + e)
         })
       } else {
-        console.log('无需为 kube-sytem 初始化 grafana prometheus datasource')
+        context.$notify({title: '无需重复创建', message: 'promethues datasource 已存在，无需重复创建', type: 'success'})
       }
       context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/search?mode=tree&skipRecent=true&skipStarred=true&starred=false`, {auth: {
         username: 'admin',
@@ -89,6 +100,9 @@ let addon = {
         for (let db of resp.data) { // 不再创建已经存在的 dashboard
           console.log(db.uri)
           delete dbs[db.uri]
+        }
+        if (resp.data.length > 0) {
+          context.$notify({title: '无需重复创建', message: `Grafana 中已存在 ${resp.data.length} 个 Dashboard，将不会重复创建`, type: 'warning'})
         }
         for (let i in dbs) {
           await installGrafanaDb(context, dbs[i].json, dbs[i].ds)
