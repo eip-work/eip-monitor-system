@@ -33,7 +33,6 @@ async function installGrafanaDb (context, dbUrl, inputName) {
 }
 
 let addon = {
-  enabled: false,
   preFlight: function (context) {
     console.log('preFlight', context)
     context.$monitorApi.get(`/namespace/kube-system/service/monitor-grafana/port/3000/api/datasources`, {auth: {
@@ -61,7 +60,7 @@ let addon = {
         await context.$monitorApi.post(`/namespace/kube-system/service/monitor-grafana/port/3000/api/datasources`, datasource, {auth: {
           username: 'admin',
           password: 'jmx09KT23BClpa7xzs'
-        }}).then(async resp => {
+        }}).then(resp => {
           context.$notify({
             title: '创建 datasource 成功',
             message: `为 kube-system 的grafana 创建 prometheus datasource 成功`,
@@ -107,7 +106,6 @@ let addon = {
         for (let i in dbs) {
           await installGrafanaDb(context, dbs[i].json, dbs[i].ds)
         }
-        this.enabled = true
       })
     }).catch(e => {
       console.error(e)
@@ -117,10 +115,6 @@ let addon = {
         context.$message.error('调用 grafana 接口失败: ' + e)
       }
     })
-  },
-  preFlightNamespace: function (context) {
-    console.log('do nothing', context)
-    // context.$notify({ title: 'monitor', message: 'preFlight - ' + context.namespace})
   },
   nodes: [],
   pods: [],
@@ -141,6 +135,7 @@ function openNodeMonitor (context) {
         return Promise.resolve(item.url)
       }
     }
+    return Promise.reject('未找到 dashbord: db/node-exporter-full')
   }).catch(e => {
     this.loading = false
     context.$message.error('调用 grafana 接口失败: ' + e)
