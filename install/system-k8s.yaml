@@ -457,6 +457,7 @@ spec:
         volumeMounts:
         - mountPath: "/prometheus"
           name: data
+          subPath: "prometheus"
         - mountPath: "/etc/prometheus"
           name: config-volume
         - mountPath: "/etc/etcd-certs"
