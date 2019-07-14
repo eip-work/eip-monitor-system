@@ -141,7 +141,6 @@ function openNodeMonitor (context) {
     context.$message.error('调用 grafana 接口失败: ' + e)
   }).then(dashboardUrl => {
     let hostIP = context.nodeIpAddress
-    // http://grafana.pzy.liangzixin.xyz/grafana/kube-system_k8s_namespace/d/0a1nwxMWz/node-exporter-full?orgId=1&var-job=applications-service-metrics&var-node=10.10.108.134&var-port=9100
     let url = `${dashboardUrl}?orgId=1&var-job=applications-service-metrics&var-node=${hostIP}&from=now-1h&to=now&kiosk=tv&refresh=10s`
     console.log('openNodeMonitor', url)
     window.open(url, '_blank')
@@ -221,7 +220,6 @@ async function openNodeMonitorFromPod (context) {
   })
   console.log(dashboardUrl)
   if (failed) return
-  // http://grafana.pzy.liangzixin.xyz/grafana/kube-system_k8s_namespace/d/0a1nwxMWz/node-exporter-full?orgId=1&var-job=applications-service-metrics&var-node=10.10.108.134&var-port=9100
   let url = `${dashboardUrl}?orgId=1&var-job=applications-service-metrics&var-node=${context.nodeIpAddress}&from=now-1h&to=now&kiosk=tv`
   console.log('openNodeMonitor', url)
   window.open(url, '_blank')
